@@ -40,6 +40,7 @@ public class NumbersListActivity extends BaseActivity implements LoaderManager.L
     };
     private Bundle savedInstanceState;
     private Button retryButton;
+    private View progress;
 
 
     @Override
@@ -53,19 +54,18 @@ public class NumbersListActivity extends BaseActivity implements LoaderManager.L
         RecyclerView numbersRecyclerView = (RecyclerView) findViewById(R.id.numbers_list);
         View numberDetailContainer = findViewById(R.id.number_detail_container);
         retryButton = (Button) findViewById(R.id.retry);
-
+        progress = findViewById(R.id.progress);
         hasTwoPanels = numberDetailContainer != null;
 
         numbersAdapter = new NumbersAdapter(onElementClicked);
         assert numbersRecyclerView != null;
         numbersRecyclerView.setAdapter(numbersAdapter);
 
-
         if (savedInstanceState != null
                 && savedInstanceState.containsKey(SELECTED_NUMBER_MODEL)) {
-            NumberModel numberModel = savedInstanceState.getParcelable(SELECTED_NUMBER_MODEL);
-            onElementSelected(numberModel);
+            selectedNumberModel = savedInstanceState.getParcelable(SELECTED_NUMBER_MODEL);
         }
+
     }
 
     @Override
@@ -74,6 +74,9 @@ public class NumbersListActivity extends BaseActivity implements LoaderManager.L
         if (Utils.isNetworkConnectionAvailable(NumbersListActivity.this)) {
             getSupportLoaderManager().initLoader(LIST_LOAD_LOADER_ID, null, this)
                     .forceLoad();
+            if (selectedNumberModel != null) {
+                onElementSelected(selectedNumberModel);
+            }
         } else {
             displayRetryButton();
         }
@@ -88,7 +91,6 @@ public class NumbersListActivity extends BaseActivity implements LoaderManager.L
 
     private void onElementSelected(NumberModel numberModel) {
         selectedNumberModel = numberModel;
-        numbersAdapter.setSelectedElement(selectedNumberModel);
         if (hasTwoPanels && numberModel != null) {
             Bundle arguments = new Bundle();
             arguments.putString(NumberDetailFragment.ARG_NUMBER_NAME, numberModel.getName());
@@ -106,17 +108,20 @@ public class NumbersListActivity extends BaseActivity implements LoaderManager.L
 
     @Override
     public Loader<Response<List<NumberModel>>> onCreateLoader(int id, Bundle args) {
+        progress.setVisibility(View.VISIBLE);
         return new ListDownloadLoader(this);
     }
 
     @Override
     public void onLoadFinished(Loader<Response<List<NumberModel>>> loader, Response<List<NumberModel>> data) {
+        progress.setVisibility(View.GONE);
         if (data.getException() == null) {
             numbersAdapter.setNumberModels(data.getData());
             numbersAdapter.setSelectedElement(selectedNumberModel);
         } else {
             Toast.makeText(NumbersListActivity.this, data.getException().getMessage(), Toast.LENGTH_SHORT).show();
             data.getException().printStackTrace();
+            displayRetryButton();
         }
     }
 
@@ -148,6 +153,7 @@ public class NumbersListActivity extends BaseActivity implements LoaderManager.L
         if (requestCode == REQUEST_CODE && data != null) {
             if (data.getBooleanExtra(NumberDetailActivity.DETAIL_BACK_PRESSED, false)) {
                 selectedNumberModel = null;
+                numbersAdapter.setSelectedElement(null);
             }
         }
     }

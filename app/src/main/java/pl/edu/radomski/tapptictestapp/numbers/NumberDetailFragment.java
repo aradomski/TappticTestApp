@@ -29,38 +29,34 @@ public class NumberDetailFragment extends BaseFragment implements LoaderManager.
     private String numberName;
     private Loader<Response<NumberDetailModel>> numberDetailModelLoader;
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (getArguments().containsKey(ARG_NUMBER_NAME)) {
-            numberName = getArguments().getString(ARG_NUMBER_NAME);
-            numberDetailModelLoader = getActivity().getSupportLoaderManager().restartLoader(DETAIL_LOADER_ID, null, this);
-        }
-    }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.number_detail_fragment, container, false);
-        return view;
+        return LayoutInflater.from(getContext()).inflate(R.layout.number_detail_fragment, container, false);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         dataBinding = DataBindingUtil.bind(view);
-        numberDetailModelLoader.forceLoad();
+        if (getArguments().containsKey(ARG_NUMBER_NAME)) {
+            numberName = getArguments().getString(ARG_NUMBER_NAME);
+            numberDetailModelLoader = getActivity().getSupportLoaderManager().restartLoader(DETAIL_LOADER_ID, null, this);
+            numberDetailModelLoader.forceLoad();
+        }
     }
 
 
     @Override
     public Loader<Response<NumberDetailModel>> onCreateLoader(int id, Bundle args) {
+        dataBinding.progress.setVisibility(View.VISIBLE);
         return new DetailDownloadLoader(getContext(), numberName);
     }
 
     @Override
     public void onLoadFinished(Loader<Response<NumberDetailModel>> loader, Response<NumberDetailModel> data) {
+        dataBinding.progress.setVisibility(View.GONE);
         if (data.getException() == null && dataBinding != null) {
             dataBinding.setNumberDetail(data.getData());
             dataBinding.executePendingBindings();

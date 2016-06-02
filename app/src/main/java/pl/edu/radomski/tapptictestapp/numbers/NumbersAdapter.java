@@ -58,14 +58,23 @@ public class NumbersAdapter extends RecyclerView.Adapter<NumbersViewHolder> {
 
             @Override
             public void onClick(View v) {
-                onElementClicked.onElementClicked(numberModel);
+
 
                 if (selectedPosition >= 0) {
-                    notifyItemChanged(selectedPosition);
+                    int lastSelectedPosition = selectedPosition;
+                    selectedPosition = holder.getAdapterPosition();
+                    notifyItemChanged(lastSelectedPosition);
                 }
 
-                selectedPosition = holder.getAdapterPosition();
+
+                onElementClicked.onElementClicked(numberModel);
                 holder.getViewBinding().numberItemContainer.setSelected(true);
+
+                if (selectedPosition == -1) {
+                    selectedPosition = holder.getAdapterPosition();
+                }
+
+
             }
         });
         holder.getViewBinding().executePendingBindings();
@@ -86,6 +95,9 @@ public class NumbersAdapter extends RecyclerView.Adapter<NumbersViewHolder> {
                     break;
                 }
             }
+        }else{
+            notifyItemChanged(selectedPosition);
+            selectedPosition=-1;
         }
     }
 }
